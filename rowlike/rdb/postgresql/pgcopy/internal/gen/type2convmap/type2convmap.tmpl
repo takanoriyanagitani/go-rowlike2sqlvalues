@@ -1,0 +1,70 @@
+package pgcopy2vals
+
+// This file is generated using a2vsw.tmpl. NEVER EDIT.
+
+import (
+	"strings"
+
+	rs "github.com/takanoriyanagitani/go-rowlike2sqlvalues"
+	. "github.com/takanoriyanagitani/go-rowlike2sqlvalues/util"
+
+	sw "github.com/takanoriyanagitani/go-rowlike2sqlvalues/writer"
+)
+
+var type2convGenMap TypeToConverterMap = map[rs.PrimitiveType]ConfigToConverter{
+
+    {{- range .Pairs }}
+
+	rs.Primitive{{.TypeHint}}: func(
+		_ PgColumnConverterConfig,
+	) PgColumnToValue {
+		return func(c PgColumn) IO[sw.Value] {
+			return OfFn(func() sw.Value { return c.ToValue{{.TypeHint}}() })
+		}
+	},
+
+	rs.Null{{.TypeHint}}: func(
+		_ PgColumnConverterConfig,
+	) PgColumnToValue {
+		return func(c PgColumn) IO[sw.Value] {
+			return OfFn(func() sw.Value { return c.ToValueNull{{.TypeHint}}() })
+		}
+	},
+
+    {{- end }}
+
+	rs.PrimitiveString: func(
+		cfg PgColumnConverterConfig,
+	) PgColumnToValue {
+		var buf strings.Builder
+		return func(c PgColumn) IO[sw.Value] {
+			return OfFn(func() sw.Value {
+				buf.Reset()
+				var chk func(string) error = cfg.StringChecker
+				return c.ToValueString(chk, &buf)
+			})
+		}
+	},
+
+	rs.NullString: func(
+		cfg PgColumnConverterConfig,
+	) PgColumnToValue {
+		var buf strings.Builder
+		return func(c PgColumn) IO[sw.Value] {
+			return OfFn(func() sw.Value {
+				buf.Reset()
+				var chk func(string) error = cfg.StringChecker
+				return c.ToValueNullString(chk, &buf)
+			})
+		}
+	},
+
+	rs.PrimitiveNull: func(
+		_ PgColumnConverterConfig,
+	) PgColumnToValue {
+		return func(c PgColumn) IO[sw.Value] {
+			return OfFn(func() sw.Value { return c.ToValueNull() })
+		}
+	},
+
+}

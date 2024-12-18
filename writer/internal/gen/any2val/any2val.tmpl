@@ -1,0 +1,44 @@
+package writer
+
+// This file is generated using any2val.tmpl. NEVER EDIT.
+
+import (
+	"context"
+
+	. "github.com/takanoriyanagitani/go-rowlike2sqlvalues/util"
+)
+
+{{ if not (eq .TypeHint "Null") }}
+import "database/sql"
+{{ end }}
+
+{{ if eq .TypeHint "Time" }}
+import "time"
+{{ end }}
+
+{{ if eq .TypeHint "Uuid" }}
+import "github.com/google/uuid"
+{{ end }}
+
+func {{.TypeHint}}ToValue(p {{.Primitive}}) Value {
+	return func(vw ValueWriter) IO[Void] {
+		return func(ctx context.Context) (Void, error) {
+			var pw PrimitiveWriter = vw.PrimitiveWriter
+			var wtr func({{.Primitive}}) IO[Void] = pw.{{.TypeHint}}Writer
+			return wtr(p)(ctx)
+		}
+	}
+}
+
+{{ if not (eq .TypeHint "Null") }}
+func Nullable{{.TypeHint}}ToValue(p sql.Null[{{.Primitive}}]) Value {
+	return func(vw ValueWriter) IO[Void] {
+		return func(ctx context.Context) (Void, error) {
+			var nw NullableWriter = vw.NullableWriter
+			var wtr func(sql.Null[{{.Primitive}}]) IO[Void] = nw.
+				{{.TypeHint}}Writer
+			return wtr(p)(ctx)
+		}
+	}
+}
+{{ end }}

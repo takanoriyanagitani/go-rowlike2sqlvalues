@@ -1,0 +1,34 @@
+package writer
+
+// This file is generated using a2vsw.tmpl. NEVER EDIT.
+
+import (
+	"database/sql"
+	"fmt"
+	"time"
+	"github.com/google/uuid"
+)
+
+func AnyToVal(a any) Value {
+	switch t := a.(type) {
+		{{- range .Pairs }}
+
+		case {{ .Primitive }}:
+			return {{.TypeHint}}ToValue(t)
+		{{ if not (eq .TypeHint "Null") }}
+		case sql.Null[{{ .Primitive }}]:
+			return Nullable{{.TypeHint}}ToValue(t)
+		case *{{.Primitive}}:
+			var conv func(sql.Null[{{.Primitive}}]) Value = Nullable{{.TypeHint}}ToValue
+			var nval sql.Null[{{.Primitive}}] = ConvertToNullable(t)
+			return conv(nval)
+		{{ end }}
+
+		{{- end }}
+
+		case nil:
+			return NullToValue(struct{}{})
+		default:
+	}
+	return InvalidValueFromErr(fmt.Errorf("%w: %v", ErrInvalidValue, a))
+}
