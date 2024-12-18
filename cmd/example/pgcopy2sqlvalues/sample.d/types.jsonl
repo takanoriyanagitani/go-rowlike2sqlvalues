@@ -1,0 +1,8 @@
+{"name":"name", "type":"string"}
+{"name":"height_in_meter", "type":"int"}
+{"name":"height_in_km", "type":"double"}
+{"name":"id", "type":"long"}
+{"name":"active", "type":"boolean"}
+{"name":"data", "type":"null-bytes"}
+{"name":"updated", "type":"null-time"}
+{"name":"related", "type":"null-uuid"}
