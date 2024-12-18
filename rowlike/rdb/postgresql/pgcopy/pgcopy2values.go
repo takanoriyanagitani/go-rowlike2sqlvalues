@@ -320,7 +320,7 @@ func (p PgColumn) ToNullableUuid() (sql.Null[uuid.UUID], error) {
 	var ret sql.Null[uuid.UUID]
 
 	var b []byte = p.ToBytes()
-	if 0 == len(b){
+	if 0 == len(b) {
 		return ret, nil
 	}
 
