@@ -23,3 +23,6 @@ go.work.sum
 
 # env file
 .env
+*.swp
+cmd/example/jsons2sqlvalues/jsons2sqlvalues
+cmd/example/pgcopy2sqlvalues/pgcopy2sqlvalues
