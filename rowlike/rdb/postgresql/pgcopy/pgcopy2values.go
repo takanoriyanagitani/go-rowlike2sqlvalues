@@ -24,8 +24,11 @@ import (
 var (
 	ErrColumnNameNotFound error = errors.New("column name not found")
 
-	ErrInvalidDword error = errors.New("invalid dword")
+	ErrInvalidWord  error = errors.New("invalid word")
 	ErrInvalidQword error = errors.New("invalid qword")
+
+	ErrInvalidDword error = errors.New("invalid dword")
+	ErrMayBeWord    error = errors.New("invalid dword: may be word")
 
 	ErrInvalidBool error = errors.New("invalid bool")
 
@@ -350,13 +353,37 @@ func (p PgColumn) ToNullableBoolean() (sql.Null[bool], error) {
 	return ret, nil
 }
 
+func (p PgColumn) ToNullableWord() (sql.Null[uint16], error) {
+	var ret sql.Null[uint16]
+	if p.IsNull() {
+		return ret, nil
+	}
+
+	if 2 != len(p.Content) {
+		return ret, fmt.Errorf("%w: %v", ErrInvalidWord, len(p.Content))
+	}
+
+	var buf [2]byte
+	copy(buf[:], p.Content)
+
+	var u uint16 = binary.BigEndian.Uint16(buf[:])
+	ret.V = u
+	ret.Valid = true
+	return ret, nil
+}
+
 func (p PgColumn) ToNullableDword() (sql.Null[uint32], error) {
 	var ret sql.Null[uint32]
 	if p.IsNull() {
 		return ret, nil
 	}
 
-	if 4 != len(p.Content) {
+	switch len(p.Content) {
+	case 4:
+		break
+	case 2:
+		return ret, ErrMayBeWord
+	default:
 		return ret, fmt.Errorf("%w: %v", ErrInvalidDword, len(p.Content))
 	}
 
@@ -401,11 +428,28 @@ func NullableMap[T, U any](
 	return ret
 }
 
-func (p PgColumn) ToNullableInt() (sql.Null[int32], error) {
-	dword, e := p.ToNullableDword()
+func (p PgColumn) ToNullableShortInt() (sql.Null[int32], error) {
+	word, e := p.ToNullableWord()
 	if nil != e {
 		return sql.Null[int32]{}, e
 	}
+	return NullableMap(
+		word,
+		func(d uint16) int32 { return int32(d) },
+	), nil
+}
+
+func (p PgColumn) ToNullableInt() (sql.Null[int32], error) {
+	dword, e := p.ToNullableDword()
+	switch e {
+	case nil:
+		break
+	case ErrMayBeWord:
+		return p.ToNullableShortInt()
+	default:
+		return sql.Null[int32]{}, e
+	}
+
 	return NullableMap(
 		dword,
 		func(d uint32) int32 { return int32(d) },
